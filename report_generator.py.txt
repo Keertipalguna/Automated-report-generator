@@ -1,0 +1,49 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from fpdf import FPDF
+
+# Step 1: Load the data
+df = pd.read_csv('sales_data.csv')        # Make sure the CSV file is in the same folder
+df['Date'] = pd.to_datetime(df['Date'])   # Convert Date column to datetime
+
+# Step 2: Analyze the data
+summary = df.groupby('Region')['Sales'].sum().reset_index()
+
+# Step 3: Create a bar chart
+plt.figure(figsize=(8, 5))
+plt.bar(summary['Region'], summary['Sales'], color='lightblue')
+plt.title('Total Sales by Region')
+plt.xlabel('Region')
+plt.ylabel('Sales')
+plt.tight_layout()
+plt.savefig('sales_chart.png')  # Save the chart as an image
+plt.close()
+
+# Step 4: Create a PDF report
+class PDFReport(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 14)
+        self.cell(0, 10, 'Automated Sales Report', ln=1, align='C')
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+pdf = PDFReport()
+pdf.add_page()
+
+pdf.set_font("Arial", size=12)
+pdf.cell(0, 10, "Total Sales by Region:", ln=1)
+
+# Add the summary data to the PDF
+for index, row in summary.iterrows():
+    pdf.cell(0, 10, f"{row['Region']}: ${row['Sales']}", ln=1)
+
+# Add the chart image to the PDF
+pdf.image("sales_chart.png", x=10, y=None, w=pdf.w - 20)
+
+# Save the PDF
+pdf.output("sales_report.pdf")
+
+print("✅ Report generated: sales_report.pdf")
